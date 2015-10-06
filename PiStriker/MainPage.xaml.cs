@@ -6,79 +6,60 @@ using Windows.Devices.Enumeration;
 using Windows.Devices.Gpio;
 using Windows.Devices.I2c;
 using Windows.UI.Xaml.Controls;
+using Autofac;
 using Polly;
+using Serilog;
 using Stateless;
 
 namespace PiStriker
 {
     public sealed partial class MainPage : Page
     {
+
+        private readonly StateMachine<Modes, Modes> _stateMachine = new StateMachine<Modes, Modes>(Modes.InitMode);
+
+        private I2cDevice _ardI2C;
+
         private const int FIRSTSENOR_PIN = 27;
         private const int THIRDSENOR_PIN = 22;
 
-        private readonly byte[] _endLeds = new byte[10]
-        {
-            6, 11, 16, 21, 26, 31, 36, 41, 46, 51
-        };
-
-        private readonly byte[] _startLeds = new byte[10]
-        {
-            1, 6, 11, 16, 21, 26, 31, 36, 41, 46
-        };
-
-        private readonly StateMachine<Modes, Modes> _stateMachine = new StateMachine<Modes, Modes>(Modes.InitMode);
-        private I2cDevice _ardI2C;
         private GpioPin _firstSenorPin;
         private GpioPin _thirdSenorPin;
-        public bool _isInUse = false;
-        private GpioPinValue _ledPinValue = GpioPinValue.High;
+
+        private IContainer _container;
+        private ILifetimeScope _lifetimeScope;
+        private ILogger _log;
+
         private bool[] _results = new bool[14];
-        private CancellationTokenSource _source = new CancellationTokenSource();
 
         public MainPage()
         {
             InitializeComponent();
 
+            var containerBuilder = new ContainerBuilder();
+
+            containerBuilder.RegisterModule(new SerilogModule());
+
+            _container = containerBuilder.Build();
+            _lifetimeScope = _container.BeginLifetimeScope();
+             _log = _lifetimeScope.Resolve<ILogger>();
+
             _stateMachine.Configure(Modes.InitMode).Permit(Modes.Next, Modes.QuiteMode);
-            //_stateMachine.Configure(Modes.PartyMode).Permit(Modes.Next, Modes.PlayMode);
             _stateMachine.Configure(Modes.PlayMode).Permit(Modes.Next, Modes.QuiteMode);
             _stateMachine.Configure(Modes.QuiteMode).Permit(Modes.Next, Modes.PlayMode);
 
-            //_stateMachine.Configure(Modes.PartyMode)
-            //    .OnEntry(SetUpPartyMode)
-            //    .OnExit(() => _source.Cancel());
+            _stateMachine.Configure(Modes.PlayMode).OnEntry(CountEvents);
 
-            _stateMachine.Configure(Modes.PlayMode)
-                .OnEntry(CountEvents);
-
-            //_stateMachine.Configure(Modes.QuiteMode)
-            //    .OnEntry(Cooldown);
-
+            _log.Information("StateMachine is Configured");
+            
             InitGPIO();
-        }
-
-        private async void Cooldown()
-        {
-            await Task.Delay(TimeSpan.FromSeconds(15));
-
-            _stateMachine.Fire(Modes.Next);
-        }
-
-        private void SetUpPartyMode()
-        {
-            _source = new CancellationTokenSource();
-            PartyMode(_source.Token);
         }
 
         private async void InitGPIO()
         {
-            var gpio = GpioController.GetDefault();
-
-            if (gpio == null)
+            try
             {
-                GpioStatus.Text = "There is no GPIO controller on this device.";
-                return;
-            }
+            var gpio = GpioController.GetDefault();
 
             _firstSenorPin = gpio.OpenPin(FIRSTSENOR_PIN);
 
@@ -97,6 +78,11 @@ namespace PiStriker
             GpioStatus.Text = "GPIO pins initialized correctly.";
 
             _stateMachine.Fire(Modes.Next);
+            }
+            catch (Exception exception)
+            {
+                _log.Error(exception,"There is no GPIO controller on this device.");
+            }
         }
 
         private void ThirdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
@@ -106,58 +92,6 @@ namespace PiStriker
             if (_stateMachine.State != Modes.PlayMode)
             {
                 _stateMachine.Fire(Modes.Next);
-            }
-        }
-
-        public async void PartyMode(CancellationToken cancellationToken)
-        {
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                while (true)
-                {
-                    SlowPinkRise();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
-                    QuickOrange();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
-                    slowYellowRise();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
-                    QuickPurple();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
-                    SlowLightBlueRise();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
-
-                    SetToBlack();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(30));
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Exception: {0}", e.Message);
             }
         }
 
@@ -172,9 +106,9 @@ namespace PiStriker
                 var ardi2C = await I2cDevice.FromIdAsync(i2CDeviceControllers[0].Id, i2CSettings);
                 return ardi2C;
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Debug.WriteLine("Exception: {0}", e.Message);
+                _log.Error(exception, "Exception: {0}", exception.Message);
                 return null;
             }
         }
@@ -200,13 +134,13 @@ namespace PiStriker
 
                 if (writeResults.Status != I2cTransferStatus.FullTransfer)
                 {
-                    Debug.WriteLine("Failed to write to arcI2C.");
+                    _log.Error("Failed to write to arcI2C.");
                     SendLightingCommand(bytesToSend);
                 }
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Debug.WriteLine("Exception: {0}", e.Message);
+                _log.Error(exception,"Exception: {0}", exception.Message);
             }
         }
 
@@ -230,20 +164,19 @@ namespace PiStriker
                 }
             }
 
-            var NextLightAddress = Convert.ToByte(lightAddress + offset);
-            byte[] lightExampleBytes = { 0, 255, 0, lightAddress, NextLightAddress, 0x1 };
-            byte[] lightExampleBytes2 = { 0, 255, 0, lightAddress, NextLightAddress, 0x2 };
+            byte nextLightAddress = Convert.ToByte(lightAddress + offset);
+            byte[] lightExampleBytes = { 0, 255, 0, lightAddress, nextLightAddress, 0x1 };
+            byte[] lightExampleBytes2 = { 0, 255, 0, lightAddress, nextLightAddress, 0x2 };
 
             SendLightingCommand(lightExampleBytes);
             SendLightingCommand(lightExampleBytes2);
-            NextLightAddress = lightAddress;
 
             await Task.Delay(TimeSpan.FromSeconds(5));
             SetToBlack();
             _stateMachine.Fire(Modes.Next);
         }
 
-        private async void FirstSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
+        private void FirstSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
         {
             if (e.Edge == GpioPinEdge.FallingEdge)
             {
@@ -260,72 +193,9 @@ namespace PiStriker
             }
         }
 
-        public async void slowYellowRise()
-        {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
-            {
-                var NextLightAddress = Convert.ToByte(lightAddress + 1);
-                byte[] lightExampleBytes = { 255, 255, 0, lightAddress, NextLightAddress, 0x1 };
-                SendLightingCommand(lightExampleBytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void SlowPinkRise()
-        {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
-            {
-                var NextLightAddress = Convert.ToByte(lightAddress + 1);
-                byte[] lightExampleBytes = { 255, 0, 255, lightAddress, NextLightAddress, 0x1 };
-                SendLightingCommand(lightExampleBytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void SlowLightBlueRise()
-        {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
-            {
-                var endlightAddress = Convert.ToByte(lightAddress + 1);
-                byte[] lightExampleBytes = { 0, 255, 255, lightAddress, endlightAddress, 0x1 };
-                SendLightingCommand(lightExampleBytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void QuickOrange()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = { 255, 128, 0, _startLeds[i], _endLeds[i], 0x2 };
-                SendLightingCommand(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void QuickYellow()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = { 255, 255, 0, _startLeds[i], _endLeds[i], 0x2 };
-                SendLightingCommand(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void QuickPurple()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = { 128, 0, 255, _startLeds[i], _endLeds[i], 0x2 };
-                SendLightingCommand(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
 
         private enum Modes
         {
-            PartyMode,
             InitMode,
             PlayMode,
             Next,
