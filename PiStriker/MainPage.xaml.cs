@@ -12,7 +12,6 @@ namespace PiStriker
     {
         private readonly StateMachine<Modes, Modes> _stateMachine = new StateMachine<Modes, Modes>(Modes.InitMode);
 
-        private readonly IContainer _container;
         private readonly IHardware _hardware;
         private readonly ILogger _log;
 
@@ -26,21 +25,11 @@ namespace PiStriker
 
             containerBuilder.RegisterModule(new SerilogModule());
 
-            if (Windows.System.Profile.AnalyticsInfo.VersionInfo.DeviceFamily == "Windows.IoT")
-            {
+            containerBuilder.RegisterType<Hardware>().As<IHardware>();
+            
+            var container = containerBuilder.Build();
 
-                containerBuilder.RegisterType<Hardware>().As<IHardware>();
-
-            }
-            else
-            {
-                containerBuilder.RegisterType<MockHardware>().As<IHardware>();
-            }
-
-
-            _container = containerBuilder.Build();
-
-            using (var lifetimeScope = _container.BeginLifetimeScope())
+            using (var lifetimeScope = container.BeginLifetimeScope())
             {
                 _log = lifetimeScope.Resolve<ILogger>();
                 _hardware = lifetimeScope.Resolve<IHardware>();
@@ -60,7 +49,18 @@ namespace PiStriker
 
                 _stateMachine.Fire(Modes.Next);
             }
-       
+
+            // Register for the unloaded event so we can clean up upon exit
+            Unloaded += MainPage_Unloaded;
+
+        }
+
+        private void MainPage_Unloaded(object sender, object args)
+        {
+            // Cleanup
+            _hardware.FirstSenorPin.Dispose();
+            _hardware.ThirdSenorPin.Dispose();
+            _hardware.ArdI2C.Dispose();
         }
 
         private void ThirdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)

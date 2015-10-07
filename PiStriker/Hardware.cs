@@ -12,7 +12,7 @@ namespace PiStriker
     {
         private const int FIRSTSENOR_PIN = 27;
         private const int THIRDSENOR_PIN = 22;
-        private I2cDevice _ardI2C;
+        public I2cDevice _ardI2C { get; private set; }
         public GpioPin FirstSenorPin { get; private set; }
         private readonly ILogger _logger;
         public GpioPin ThirdSenorPin { get; private set; }
