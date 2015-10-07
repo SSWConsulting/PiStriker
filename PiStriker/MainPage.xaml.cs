@@ -14,6 +14,7 @@ namespace PiStriker
 
         private readonly IHardware _hardware;
         private readonly ILogger _log;
+        private readonly ILights _lights;
 
         private bool[] _results = new bool[14];
 
@@ -25,14 +26,15 @@ namespace PiStriker
 
             containerBuilder.RegisterModule(new SerilogModule());
 
-            containerBuilder.RegisterType<Hardware>().As<IHardware>();
-            
+            containerBuilder.RegisterType<Hardware>().As<IHardware>().SingleInstance();
+            containerBuilder.RegisterType<Lights>().As<ILights>().SingleInstance();
             var container = containerBuilder.Build();
 
             using (var lifetimeScope = container.BeginLifetimeScope())
             {
                 _log = lifetimeScope.Resolve<ILogger>();
                 _hardware = lifetimeScope.Resolve<IHardware>();
+                _lights = lifetimeScope.Resolve<ILights>();
             }
             
             _stateMachine.Configure(Modes.InitMode).Permit(Modes.Next, Modes.QuiteMode);
@@ -58,6 +60,10 @@ namespace PiStriker
         private void MainPage_Unloaded(object sender, object args)
         {
             // Cleanup
+
+            _hardware.FirstSenorPin.ValueChanged -= FirstSenorPinValueChanged;
+            _hardware.ThirdSenorPin.ValueChanged -= ThirdSenorPinValueChanged;
+
             _hardware.FirstSenorPin.Dispose();
             _hardware.ThirdSenorPin.Dispose();
             _hardware.ArdI2C.Dispose();
@@ -73,21 +79,9 @@ namespace PiStriker
             }
         }
 
-        public async void SetToBlack()
-        {
-            byte[] blackbytes1 = {0, 0, 0, 0, 50, 0x1};
-            byte[] blackbytes2 = {0, 0, 0, 0, 50, 0x2};
-            _hardware.SendLightingCommand(blackbytes1);
-            _hardware.SendLightingCommand(blackbytes2);
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
-            _hardware.SendLightingCommand(blackbytes1);
-            _hardware.SendLightingCommand(blackbytes2);
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
-        }
-
         private async void CountEvents()
         {
-            SetToBlack();
+            _lights.SetToBlack();
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             DisplayMode(_results);
@@ -95,27 +89,23 @@ namespace PiStriker
 
         private async void DisplayMode(bool[] results)
         {
-            byte lightAddress = 0x00;
-            var offset = 0;
+            var height = 0;
             for (var i = 0; i < results.Length; i++)
             {
                 if (results[i])
                 {
-                    offset = offset + 7;
+                    height = height + 7;
                 }
             }
 
-            var nextLightAddress = Convert.ToByte(lightAddress + offset);
-            byte[] lightExampleBytes = {0, 255, 0, lightAddress, nextLightAddress, 0x1};
-            byte[] lightExampleBytes2 = {0, 255, 0, lightAddress, nextLightAddress, 0x2};
-
-            _hardware.SendLightingCommand(lightExampleBytes);
-            _hardware.SendLightingCommand(lightExampleBytes2);
+            _lights.TurnOnLedToDsplayScore(height);
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-            SetToBlack();
+            _lights.SetToBlack();
             _stateMachine.Fire(Modes.Next);
         }
+
+
 
         private void FirstSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
         {

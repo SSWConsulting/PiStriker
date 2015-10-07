@@ -14,6 +14,6 @@ namespace PiStriker
         GpioPin ThirdSenorPin { get; }
         I2cDevice ArdI2C { get; }
         Task<bool> InitializeHardware();
-        void SendLightingCommand(byte[] bytesToSend);
+        void SendBytesToArduino(byte[] bytesToSend);
     }
 }

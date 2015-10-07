@@ -12,7 +12,7 @@ namespace PiStriker
     {
         private const int FIRSTSENOR_PIN = 27;
         private const int THIRDSENOR_PIN = 22;
-        public I2cDevice _ardI2C { get; private set; }
+        public I2cDevice ArdI2C { get; private set; }
         public GpioPin FirstSenorPin { get; private set; }
         private readonly ILogger _logger;
         public GpioPin ThirdSenorPin { get; private set; }
@@ -39,7 +39,7 @@ namespace PiStriker
                 ThirdSenorPin.SetDriveMode(GpioPinDriveMode.Input);
                 ThirdSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
 
-                _ardI2C = await SetUpI2C();
+                ArdI2C = await SetUpI2C();
 
                 _logger.Information("GPIO & I2C successfully initialized.");
 
@@ -70,16 +70,16 @@ namespace PiStriker
             }
         }
 
-        public void SendLightingCommand(byte[] bytesToSend)
+        public void SendBytesToArduino(byte[] bytesToSend)
         {
             try
             {
-                var writeResults = _ardI2C.WritePartial(bytesToSend);
+                var writeResults = ArdI2C.WritePartial(bytesToSend);
 
                 if (writeResults.Status != I2cTransferStatus.FullTransfer)
                 {
                     _logger.Error("Failed to write to arcI2C.");
-                    SendLightingCommand(bytesToSend);
+                    SendBytesToArduino(bytesToSend);
                 }
             }
             catch (Exception exception)
