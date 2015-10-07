@@ -22,6 +22,9 @@ using Serilog.Formatting;
 
 namespace PiStriker
 {
+    /// <summary>
+    /// Outputs the Serilog to the Debug output
+    /// </summary>
     class ConsoleSink : ILogEventSink
     {
         readonly ITextFormatter _textFormatter;
@@ -31,6 +34,7 @@ namespace PiStriker
             if (textFormatter == null) throw new ArgumentNullException("textFormatter");
             _textFormatter = textFormatter;
         }
+
 
         public void Emit(LogEvent logEvent)
         {

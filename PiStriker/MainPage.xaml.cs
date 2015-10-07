@@ -18,6 +18,9 @@ namespace PiStriker
 
         private bool[] _results = new bool[14];
 
+        /// <summary>
+        /// Initialize page, autofac, hardware & configures the State Machine
+        /// </summary>
         public MainPage()
         {
             InitializeComponent();
@@ -52,11 +55,13 @@ namespace PiStriker
                 _stateMachine.Fire(Modes.Next);
             }
 
-            // Register for the unloaded event so we can clean up upon exit
             Unloaded += MainPage_Unloaded;
 
         }
 
+        /// <summary>
+        /// Unloaded event so we can clean up upon exit
+        /// </summary>
         private void MainPage_Unloaded(object sender, object args)
         {
             // Cleanup
@@ -69,14 +74,26 @@ namespace PiStriker
             _hardware.ArdI2C.Dispose();
         }
 
-        private void ThirdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        /// <summary>
+        /// Event handler for the 1st break beam sensor
+        /// </summary>
+        private void FirstSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
         {
-            _results[2] = true;
+            int SensorPosition = 0;
+            GpioPinEdge gpioPinEdge = e.Edge;
 
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            RecordBrokenBeamEvent(gpioPinEdge, SensorPosition);
+        }
+
+        /// <summary>
+        /// Event handler for the 3rd break beam sensor
+        /// </summary>
+        private void ThirdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
+        {
+            int SensorPosition = 2;
+            GpioPinEdge gpioPinEdge = e.Edge;
+
+            RecordBrokenBeamEvent(gpioPinEdge, SensorPosition);
         }
 
         private async void CountEvents()
@@ -98,7 +115,7 @@ namespace PiStriker
                 }
             }
 
-            _lights.TurnOnLedToDsplayScore(height);
+            _lights.TurnOnLedToDisplayScore(height);
 
             await Task.Delay(TimeSpan.FromSeconds(5));
             _lights.SetToBlack();
@@ -107,14 +124,13 @@ namespace PiStriker
 
 
 
-        private void FirstSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
+
+
+        private void RecordBrokenBeamEvent(GpioPinEdge gpioPinEdge, int SensorPosition)
         {
-            if (e.Edge == GpioPinEdge.FallingEdge)
+            if (gpioPinEdge == GpioPinEdge.RisingEdge)
             {
-            }
-            else if (e.Edge == GpioPinEdge.RisingEdge)
-            {
-                _results[0] = true;
+                _results[SensorPosition] = true;
                 if (_stateMachine.State != Modes.PlayMode)
                 {
                     _results = new bool[14];

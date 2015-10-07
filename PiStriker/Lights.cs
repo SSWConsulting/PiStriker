@@ -27,7 +27,9 @@ namespace PiStriker
             _logger = logger;
             _hardware = hardware;
         }
-
+        /// <summary>
+        ///  Turns the neo pixel strip off
+        /// </summary>
         public async void SetToBlack()
         {
             byte[] blackbytes1 = {0, 0, 0, 0, 50, 0x1};
@@ -40,7 +42,11 @@ namespace PiStriker
             await Task.Delay(TimeSpan.FromMilliseconds(1));
         }
 
-        public void TurnOnLedToDsplayScore(int height)
+        /// <summary>
+        /// Displays the score to the user by turning on the neo pixel strips on
+        /// </summary>
+        /// <param name="height">The highest beam sensor broken by the wood block.</param>
+        public void TurnOnLedToDisplayScore(int height)
         {
             byte startingLightAddress = 0x00;
             var endingLightAddress = Convert.ToByte(startingLightAddress + height);
@@ -51,69 +57,36 @@ namespace PiStriker
             _hardware.SendBytesToArduino(lightExampleBytes2);
         }
 
-        public async void SlowYellowRise()
+        /// <summary>
+        ///  Predefined light byte command sequence - Which turns the entire selected neo pixel strip a predefined color one led at a time
+        /// </summary>
+        public async void Crawling(byte r, byte g, byte b, byte stripId, CancellationToken cancellationToken)
         {
             for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
             {
                 var NextLightAddress = Convert.ToByte(lightAddress + 1);
-                byte[] lightExampleBytes = {255, 255, 0, lightAddress, NextLightAddress, 0x1};
+                byte[] lightExampleBytes = {r, g, b, lightAddress, NextLightAddress, stripId};
                 _hardware.SendBytesToArduino(lightExampleBytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken);
             }
+
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
         }
 
-        public async void SlowPinkRise()
-        {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
-            {
-                var NextLightAddress = Convert.ToByte(lightAddress + 1);
-                byte[] lightExampleBytes = {255, 0, 255, lightAddress, NextLightAddress, 0x1};
-                _hardware.SendBytesToArduino(lightExampleBytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void SlowLightBlueRise()
-        {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
-            {
-                var endlightAddress = Convert.ToByte(lightAddress + 1);
-                byte[] lightExampleBytes = {0, 255, 255, lightAddress, endlightAddress, 0x1};
-                _hardware.SendBytesToArduino(lightExampleBytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void QuickOrange()
+        /// <summary>
+        ///  Predefined light byte command sequence - Which turns the entire selected neo pixel strip a predefined color in batches of 5 at a time
+        /// </summary>
+        public async void Batched(byte r, byte g, byte b, byte stripId, CancellationToken cancellationToken)
         {
             for (var i = 0; i < 10; i++)
             {
-                byte[] bytes = {255, 128, 0, _startLeds[i], _endLeds[i], 0x2};
+                byte[] bytes = { r, g, b, _startLeds[i], _endLeds[i], stripId};
                 _hardware.SendBytesToArduino(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken);
             }
-        }
 
-        public async void QuickYellow()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = {255, 255, 0, _startLeds[i], _endLeds[i], 0x2};
-                _hardware.SendBytesToArduino(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
         }
-
-        public async void QuickPurple()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = {128, 0, 255, _startLeds[i], _endLeds[i], 0x2};
-                _hardware.SendBytesToArduino(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
 
         public async void PartyMode(CancellationToken cancellationToken)
         {
@@ -123,27 +96,18 @@ namespace PiStriker
 
                 while (true)
                 {
-                    SlowPinkRise();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-
-                    QuickOrange();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-
-                    SlowYellowRise();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-
-                    QuickPurple();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-
-                    SlowLightBlueRise();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-
-                    SetToBlack();
+                    //Purple
+                    Crawling(255, 0, 255, 1, cancellationToken);
+                    //Orange
+                    Batched(255, 128, 0,2, cancellationToken);
+                    //Yellow
+                    Crawling(255,255,0,1, cancellationToken);
+                    //Blue
+                    Batched(0, 128, 255, 2, cancellationToken);
+                    //Cyan
+                    Crawling(0, 255, 255, 1, cancellationToken);
+                    //Pink
+                    Batched(255, 51, 255, 2, cancellationToken);
 
                     await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
                 }

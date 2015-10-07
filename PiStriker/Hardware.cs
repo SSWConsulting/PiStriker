@@ -7,22 +7,25 @@ using Serilog;
 
 namespace PiStriker
 {
-
     public class Hardware : IHardware
     {
         private const int FIRSTSENOR_PIN = 27;
         private const int THIRDSENOR_PIN = 22;
-        public I2cDevice ArdI2C { get; private set; }
-        public GpioPin FirstSenorPin { get; private set; }
         private readonly ILogger _logger;
-        public GpioPin ThirdSenorPin { get; private set; }
 
         public Hardware(ILogger logger)
         {
             _logger = logger;
-
         }
 
+        public I2cDevice ArdI2C { get; private set; }
+        public GpioPin FirstSenorPin { get; private set; }
+        public GpioPin ThirdSenorPin { get; private set; }
+
+        /// <summary>
+        ///     Sets up GpioController, all GPIO Pins and calls SetUpI2C to create I2C connection.
+        /// </summary>
+        /// <returns>True if all hardware was initialized correctly.</returns>
         public async Task<bool> InitializeHardware()
         {
             try
@@ -52,6 +55,38 @@ namespace PiStriker
             }
         }
 
+        /// <summary>
+        ///     Handles sending the bytes to the arduino via the previously set up I2C connection.
+        ///     Also this method will resend any bytes that are not acknowledged as been sent successfully.
+        /// </summary>
+        /// <param name="bytesToSend">Must be in the following format: R,G,B,StartingLed,EndingLed,StrandID</param>
+        public void SendBytesToArduino(byte[] bytesToSend)
+        {
+            if (bytesToSend.Length != 6)
+            {
+                try
+                {
+                    var writeResults = ArdI2C.WritePartial(bytesToSend);
+
+                    if (writeResults.Status != I2cTransferStatus.FullTransfer)
+                    {
+                        _logger.Error("Failed to write to arcI2C.");
+                        SendBytesToArduino(bytesToSend);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    _logger.Error(exception, "Exception: {0}", exception.Message);
+                }
+            }
+            throw new InvalidOperationException(
+                "Must be 6 bytes - In the following format: R, G, B, StartingLed, EndingLed, StrandID");
+        }
+
+        /// <summary>
+        ///     Set up the I2C connection to the arduino.
+        /// </summary>
+        /// <returns></returns>
         private async Task<I2cDevice> SetUpI2C()
         {
             try
@@ -66,25 +101,7 @@ namespace PiStriker
             catch (Exception exception)
             {
                 _logger.Error(exception, "Exception: {0}", exception.Message);
-                return null;
-            }
-        }
-
-        public void SendBytesToArduino(byte[] bytesToSend)
-        {
-            try
-            {
-                var writeResults = ArdI2C.WritePartial(bytesToSend);
-
-                if (writeResults.Status != I2cTransferStatus.FullTransfer)
-                {
-                    _logger.Error("Failed to write to arcI2C.");
-                    SendBytesToArduino(bytesToSend);
-                }
-            }
-            catch (Exception exception)
-            {
-                _logger.Error(exception, "Exception: {0}", exception.Message);
+                throw;
             }
         }
     }
