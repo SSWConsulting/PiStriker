@@ -360,6 +360,8 @@ namespace PiStriker
                 offset = 50;                
             }
 
+            StrengthIndex.Text = offset.ToString();
+
             var NextLightAddress = Convert.ToByte(lightAddress + offset);
             byte[] lightExampleBytes = {0, 255, 0, lightAddress, NextLightAddress, 0x1};
             byte[] lightExampleBytes2 = {0, 255, 0, lightAddress, NextLightAddress, 0x2};

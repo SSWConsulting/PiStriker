@@ -6,16 +6,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <TextBlock x:Name="GpioStatus" FontSize="120" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Margin="181,120,0,0" Height="638" Width="833">
-        	<Span Foreground="Red" FontSize="100" FontFamily="Consolas">
-        		<Run Text="Waiting"/>
-        	</Span>
-        	<LineBreak/>
-        	<Span Foreground="Red" FontSize="12.6666666666667" FontFamily="Consolas">
-        		<Run/>
-        	</Span>
-        </TextBlock>
+    <Grid>
+        <Grid.Background>
+            <ImageBrush Stretch="Fill" ImageSource="Assets/GreyBackGround.png"/>
+        </Grid.Background>
+        <Image x:Name="image" HorizontalAlignment="Left" Height="300" Margin="1308,770,0,0" VerticalAlignment="Top" Width="602" Source="Assets/sswLogo.png"/>
+        <TextBlock x:Name="TitleString" HorizontalAlignment="Center" Margin="10,116,10,0" TextAlignment="Center" TextWrapping="Wrap" Text="Your Strength Index" VerticalAlignment="Top" Height="240" Width="1900" FontSize="100" Foreground="#FFCC4141"/>
+        <TextBlock x:Name="StrengthIndex" HorizontalAlignment="Left" Margin="860,308,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" FontSize="300" Foreground="#FFCC4141"/>
+        <TextBlock x:Name="GpioStatus" HorizontalAlignment="Left" Margin="10,1043,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" FontSize="20" Foreground="#FFCC4141"/>
+
 
     </Grid>
 </Page>
