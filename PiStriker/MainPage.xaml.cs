@@ -399,6 +399,7 @@ namespace PiStriker
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             _playing = false;
+            StrengthIndex.Text = "0";
             StartParty();
         }
 
