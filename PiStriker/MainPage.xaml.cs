@@ -7,11 +7,15 @@ using Windows.Devices.Gpio;
 using Windows.Devices.I2c;
 using Windows.UI.Xaml.Controls;
 using Stateless;
+using Windows.UI.Xaml;
 
 namespace PiStriker
 {
     public sealed partial class MainPage : Page
     {
+        private static DispatcherTimer _playTimer = new DispatcherTimer();
+        private static bool _playing = false;
+
         private const int SIG1 = 4;
         private const int SIG2 = 17;
         private const int SIG3 = 18;
@@ -38,7 +42,7 @@ namespace PiStriker
             1, 6, 11, 16, 21, 26, 31, 36, 41, 46
         };
 
-        private readonly StateMachine<Modes, Modes> _stateMachine = new StateMachine<Modes, Modes>(Modes.InitMode);
+        //private readonly StateMachine<Modes, Modes> _stateMachine = new StateMachine<Modes, Modes>(Modes.InitMode);
         private I2cDevice _ardI2C;
         public bool _isInUse = false;
         private GpioPinValue _ledPinValue = GpioPinValue.High;
@@ -65,29 +69,24 @@ namespace PiStriker
         {
             InitializeComponent();
 
-            _stateMachine.Configure(Modes.InitMode).Permit(Modes.Next, Modes.QuiteMode);
+            //_stateMachine.Configure(Modes.InitMode).Permit(Modes.Next, Modes.QuiteMode);
             //_stateMachine.Configure(Modes.PartyMode).Permit(Modes.Next, Modes.PlayMode);
-            _stateMachine.Configure(Modes.PlayMode).Permit(Modes.Next, Modes.QuiteMode);
-            _stateMachine.Configure(Modes.QuiteMode).Permit(Modes.Next, Modes.PlayMode);
+            //_stateMachine.Configure(Modes.PlayMode).Permit(Modes.Next, Modes.QuiteMode);
+            //_stateMachine.Configure(Modes.QuiteMode).Permit(Modes.Next, Modes.PlayMode);
 
             //_stateMachine.Configure(Modes.PartyMode)
             //    .OnEntry(SetUpPartyMode)
             //    .OnExit(() => _source.Cancel());
 
-            _stateMachine.Configure(Modes.PlayMode)
-                .OnEntry(CountEvents);
+            //_stateMachine.Configure(Modes.PlayMode)
+            //    .OnEntry(CountEvents);
 
             //_stateMachine.Configure(Modes.QuiteMode)
             //    .OnEntry(Cooldown);
 
             InitGPIO();
-        }
-
-        private async void Cooldown()
-        {
-            await Task.Delay(TimeSpan.FromSeconds(15));
-
-            _stateMachine.Fire(Modes.Next);
+            _playTimer.Interval = TimeSpan.FromMilliseconds(2000);
+            _playTimer.Tick += GameEnded;
         }
 
         private void SetUpPartyMode()
@@ -112,11 +111,11 @@ namespace PiStriker
             _1stSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _1stSenorPin.ValueChanged += _1StSenorPinValueChanged;
 
-            _2ndSenorPin = gpio.OpenPin(SIG2);
+            //_2ndSenorPin = gpio.OpenPin(SIG2);
 
-            _2ndSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _2ndSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _2ndSenorPin.ValueChanged += _2ndSenorPinValueChanged;
+            //_2ndSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            //_2ndSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            //_2ndSenorPin.ValueChanged += _2ndSenorPinValueChanged;
 
             _3rdSenorPin = gpio.OpenPin(SIG3);
 
@@ -180,11 +179,11 @@ namespace PiStriker
             _12thSenorPin.ValueChanged += _12thSenorPinValueChanged;
 
 
-            _13thSenorPin = gpio.OpenPin(SIG13);
+            //_13thSenorPin = gpio.OpenPin(SIG13);
 
-            _13thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _13thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _13thSenorPin.ValueChanged += _13thSenorPinValueChanged;
+            //_13thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            //_13thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            //_13thSenorPin.ValueChanged += _13thSenorPinValueChanged;
 
             _14thSenorPin = gpio.OpenPin(SIG14);
 
@@ -196,154 +195,102 @@ namespace PiStriker
             _ardI2C = await SetUpI2C();
             SetToBlack();
             GpioStatus.Text = "GPIO pins initialized correctly.";
+        }
 
-            _stateMachine.Fire(Modes.Next);
+        private async Task StartPlay()
+        {
+            if (!_playing)
+            {
+                _playing = true;
+                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+                    _playTimer.Start();
+                });
+            }
         }
 
         private async void _1StSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
         {
-            if (e.Edge == GpioPinEdge.FallingEdge)
-            {
-            }
-            else if (e.Edge == GpioPinEdge.RisingEdge)
-            {
-                _results[0] = true;
-                if (_stateMachine.State != Modes.PlayMode)
-                {
-                    _results = new bool[14];
-                    _stateMachine.Fire(Modes.Next);
-                }
-            }
+            _results[0] = true;
+            await StartPlay();
         }
 
-        private void _2ndSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _2ndSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[1] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _3RdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _3RdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[2] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _4thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _4thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[3] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _5thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _5thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[4] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _6thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _6thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[5] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _7thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _7thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[6] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _8thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _8thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[7] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _9thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _9thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[8] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _10thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _10thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[9] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _11thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _11thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[10] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _12thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _12thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[12] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _13thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _13thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[12] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
-        private void _14thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _14thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[13] = true;
-
-            if (_stateMachine.State != Modes.PlayMode)
-            {
-                _stateMachine.Fire(Modes.Next);
-            }
+            await StartPlay();
         }
 
         public async void PartyMode(CancellationToken cancellationToken)
@@ -446,11 +393,9 @@ namespace PiStriker
             }
         }
 
-        private async void CountEvents()
+        private void GameEnded(object sender, object e)
         {
-            SetToBlack();
-            await Task.Delay(TimeSpan.FromSeconds(1));
-
+            _playTimer.Stop();
             DisplayMode(_results);
         }
 
@@ -462,7 +407,16 @@ namespace PiStriker
             {
                 if (results[i])
                 {
-                    offset = offset + 3;
+                    if (offset == 0)
+                    {
+                        offset = offset + 7;
+                    }
+                    else
+                    {
+                        offset = offset + 3;
+                    }
+
+                    results[i] = false;
                 }
             }
 
@@ -473,9 +427,23 @@ namespace PiStriker
             SendLightingCommand(lightExampleBytes);
             SendLightingCommand(lightExampleBytes2);
 
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             SetToBlack();
-            _stateMachine.Fire(Modes.Next);
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SendLightingCommand(lightExampleBytes);
+            SendLightingCommand(lightExampleBytes2);
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SetToBlack();
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SendLightingCommand(lightExampleBytes);
+            SendLightingCommand(lightExampleBytes2);
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SetToBlack();
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SendLightingCommand(lightExampleBytes);
+            SendLightingCommand(lightExampleBytes2);
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SetToBlack();
         }
 
 
