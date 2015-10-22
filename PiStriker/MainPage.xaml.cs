@@ -32,7 +32,6 @@ namespace PiStriker
         private const int SIG13 = 19;
         private const int SIG14 = 16;
 
-
         private readonly byte[] _endLeds = new byte[10]
         {
             6, 11, 16, 21, 26, 31, 36, 41, 46, 51
@@ -49,7 +48,6 @@ namespace PiStriker
         private GpioPinValue _ledPinValue = GpioPinValue.High;
         private bool[] _results = new bool[14];
         private CancellationTokenSource _partyModeCancellationTokenSource = new CancellationTokenSource();
-
 
         private GpioPin _1stSenorPin;
         private GpioPin _2ndSenorPin;
@@ -70,24 +68,10 @@ namespace PiStriker
         {
             InitializeComponent();
 
-            //_stateMachine.Configure(Modes.InitMode).Permit(Modes.Next, Modes.QuiteMode);
-            //_stateMachine.Configure(Modes.PartyMode).Permit(Modes.Next, Modes.PlayMode);
-            //_stateMachine.Configure(Modes.PlayMode).Permit(Modes.Next, Modes.QuiteMode);
-            //_stateMachine.Configure(Modes.QuiteMode).Permit(Modes.Next, Modes.PlayMode);
-
-            //_stateMachine.Configure(Modes.PartyMode)
-            //    .OnEntry(SetUpPartyMode)
-            //    .OnExit(() => _source.Cancel());
-
-            //_stateMachine.Configure(Modes.PlayMode)
-            //    .OnEntry(CountEvents);
-
-            //_stateMachine.Configure(Modes.QuiteMode)
-            //    .OnEntry(Cooldown);
-
             InitGPIO();
             _playTimer.Interval = TimeSpan.FromMilliseconds(2000);
             _playTimer.Tick += GameEnded;
+            StartParty();
         }
 
         private async void InitGPIO()
@@ -101,91 +85,75 @@ namespace PiStriker
             }
 
             _1stSenorPin = gpio.OpenPin(SIG1);
-
             _1stSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _1stSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _1stSenorPin.ValueChanged += _SenorPinValueChanged;
 
             //_2ndSenorPin = gpio.OpenPin(SIG2);
-
             //_2ndSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             //_2ndSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             //_2ndSenorPin.ValueChanged += _2ndSenorPinValueChanged;
 
             _3rdSenorPin = gpio.OpenPin(SIG3);
-
             _3rdSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _3rdSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _3rdSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _4thSenorPin = gpio.OpenPin(SIG4);
-
             _4thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _4thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _4thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _5thSenorPin = gpio.OpenPin(SIG5);
-
             _5thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _5thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _5thSenorPin.ValueChanged += _SenorPinValueChanged;
         
             _6thSenorPin = gpio.OpenPin(SIG6);
-
             _6thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _6thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _6thSenorPin.ValueChanged += _SenorPinValueChanged;
             
             _7thSenorPin = gpio.OpenPin(SIG7);
-
             _7thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _7thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _7thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _8thSenorPin = gpio.OpenPin(SIG8);
-
             _8thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _8thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _8thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _9thSenorPin = gpio.OpenPin(SIG9);
-
             _9thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _9thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _9thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _10thSenorPin = gpio.OpenPin(SIG10);
-
             _10thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _10thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _10thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _11thSenorPin = gpio.OpenPin(SIG11);
-
             _11thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _11thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _11thSenorPin.ValueChanged += _SenorPinValueChanged;
 
-
             _12thSenorPin = gpio.OpenPin(SIG12);
-
             _12thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _12thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _12thSenorPin.ValueChanged += _SenorPinValueChanged;
 
 
             //_13thSenorPin = gpio.OpenPin(SIG13);
-
             //_13thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             //_13thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             //_13thSenorPin.ValueChanged += _13thSenorPinValueChanged;
 
             _14thSenorPin = gpio.OpenPin(SIG14);
-
             _14thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _14thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
             _14thSenorPin.ValueChanged += _SenorPinValueChanged;
-
 
             _ardI2C = await SetUpI2C();
             SetToBlack();
@@ -197,9 +165,9 @@ namespace PiStriker
             if (!_playing)
             {
                 _playing = true;
-                    Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                StopParty();
+                Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
-                    StopParty();
                     _playTimer.Start();
                 });
             }
@@ -277,9 +245,9 @@ namespace PiStriker
 
 
             lock (thisLock)
-        {
-                StartPlay();
-        }
+            {
+                    StartPlay();
+            }
         }
 
         public async void PartyMode(CancellationToken partyModeCancellationToken)
@@ -288,31 +256,23 @@ namespace PiStriker
             {
                 while (_playing != true)
                 {
-                    SlowPinkRise();
+                    if (!_playing)
+                    {
+                        await SlowPinkRise();
+                    }
 
-                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
+                    if (!_playing)
+                    {
+                        await SlowYellowRise();
+                    }
 
-                    QuickOrange();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
-
-                    SlowYellowRise();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
-
-                    QuickPurple();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
-
-                    SlowLightBlueRise();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
-
-                    SetToBlack();
-
-                    await Task.Delay(TimeSpan.FromSeconds(30), partyModeCancellationToken);
+                    if (!_playing)
+                    {
+                        await SlowLightBlueRise();
+                    }
                 }
 
+                SetToBlack();
             }
             catch (Exception e)
             {
@@ -371,9 +331,7 @@ namespace PiStriker
         private void GameEnded(object sender, object e)
         {
             _playTimer.Stop();
-            DisplayMode(_results);
-            StartParty();
-            _playing = false;
+            DisplayMode(_results);            
         }
 
         private async void DisplayMode(bool[] results)
@@ -399,7 +357,7 @@ namespace PiStriker
 
             if (offset == 46)
             {
-                offset = 50;
+                offset = 50;                
             }
 
             var NextLightAddress = Convert.ToByte(lightAddress + offset);
@@ -426,80 +384,59 @@ namespace PiStriker
             SendLightingCommand(lightExampleBytes2);
             await Task.Delay(TimeSpan.FromSeconds(0.5));
             SetToBlack();
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SendLightingCommand(lightExampleBytes);
+            SendLightingCommand(lightExampleBytes2);
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SetToBlack();
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SendLightingCommand(lightExampleBytes);
+            SendLightingCommand(lightExampleBytes2);
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            SetToBlack();
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            _playing = false;
+            StartParty();
         }
 
-
-
-        public async void SlowYellowRise()
+        public async Task SlowYellowRise()
         {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
+            for (byte lightAddress = 0x00; lightAddress <= 0x50; lightAddress++)
             {
                 var NextLightAddress = Convert.ToByte(lightAddress + 1);
                 byte[] lightExampleBytes = {255, 255, 0, lightAddress, NextLightAddress, 0x1};
+                byte[] lightExampleBytes2 = { 255, 255, 0, lightAddress, NextLightAddress, 0x2 };
                 SendLightingCommand(lightExampleBytes);
+                SendLightingCommand(lightExampleBytes2);
                 await Task.Delay(TimeSpan.FromMilliseconds(10));
             }
         }
 
-        public async void SlowPinkRise()
+        public async Task SlowPinkRise()
         {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
+            for (byte lightAddress = 0x00; lightAddress <= 0x50; lightAddress++)
             {
                 var NextLightAddress = Convert.ToByte(lightAddress + 1);
                 byte[] lightExampleBytes = {255, 0, 255, lightAddress, NextLightAddress, 0x1};
+                byte[] lightExampleBytes2 = { 255, 0, 255, lightAddress, NextLightAddress, 0x2 };
                 SendLightingCommand(lightExampleBytes);
+                SendLightingCommand(lightExampleBytes2);
                 await Task.Delay(TimeSpan.FromMilliseconds(10));
             }
         }
 
-        public async void SlowLightBlueRise()
+        public async Task SlowLightBlueRise()
         {
-            for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
+            for (byte lightAddress = 0x00; lightAddress <= 0x50; lightAddress++)
             {
                 var endlightAddress = Convert.ToByte(lightAddress + 1);
                 byte[] lightExampleBytes = {0, 255, 255, lightAddress, endlightAddress, 0x1};
+                byte[] lightExampleBytes2 = { 0, 255, 255, lightAddress, endlightAddress, 0x2 };
                 SendLightingCommand(lightExampleBytes);
+                SendLightingCommand(lightExampleBytes2);
                 await Task.Delay(TimeSpan.FromMilliseconds(10));
             }
         }
-
-        public async void QuickOrange()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = {255, 128, 0, _startLeds[i], _endLeds[i], 0x2};
-                SendLightingCommand(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void QuickYellow()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = {255, 255, 0, _startLeds[i], _endLeds[i], 0x2};
-                SendLightingCommand(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        public async void QuickPurple()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                byte[] bytes = {128, 0, 255, _startLeds[i], _endLeds[i], 0x2};
-                SendLightingCommand(bytes);
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
-        }
-
-        private enum Modes
-        {
-            PartyMode,
-            InitMode,
-            PlayMode,
-            Next,
-            QuiteMode
-        };
     }
 }
