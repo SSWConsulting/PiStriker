@@ -12,8 +12,21 @@ namespace PiStriker
 {
     public sealed partial class MainPage : Page
     {
-        private const int FIRSTSENOR_PIN = 27;
-        private const int THIRDSENOR_PIN = 22;
+        private const int SIG1 = 4;
+        private const int SIG2 = 17;
+        private const int SIG3 = 18;
+        private const int SIG4 = 27;
+        private const int SIG5 = 22;
+        private const int SIG6 = 23;
+        private const int SIG7 = 24;
+        private const int SIG8 = 25;
+        private const int SIG9 = 5;
+        private const int SIG10 = 6;
+        private const int SIG11 = 12;
+        private const int SIG12 = 13;
+        private const int SIG13 = 19;
+        private const int SIG14 = 16;
+
 
         private readonly byte[] _endLeds = new byte[10]
         {
@@ -27,12 +40,26 @@ namespace PiStriker
 
         private readonly StateMachine<Modes, Modes> _stateMachine = new StateMachine<Modes, Modes>(Modes.InitMode);
         private I2cDevice _ardI2C;
-        private GpioPin _firstSenorPin;
         public bool _isInUse = false;
         private GpioPinValue _ledPinValue = GpioPinValue.High;
         private bool[] _results = new bool[14];
         private CancellationTokenSource _source = new CancellationTokenSource();
-        private GpioPin _thirdSenorPin;
+
+
+        private GpioPin _1stSenorPin;
+        private GpioPin _2ndSenorPin;
+        private GpioPin _3rdSenorPin;
+        private GpioPin _4thSenorPin;
+        private GpioPin _5thSenorPin;
+        private GpioPin _6thSenorPin;
+        private GpioPin _7thSenorPin;
+        private GpioPin _8thSenorPin;
+        private GpioPin _9thSenorPin;
+        private GpioPin _10thSenorPin;
+        private GpioPin _11thSenorPin;
+        private GpioPin _12thSenorPin;
+        private GpioPin _13thSenorPin;
+        private GpioPin _14thSenorPin;
 
         public MainPage()
         {
@@ -79,17 +106,92 @@ namespace PiStriker
                 return;
             }
 
-            _firstSenorPin = gpio.OpenPin(FIRSTSENOR_PIN);
+            _1stSenorPin = gpio.OpenPin(SIG1);
 
-            _firstSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _firstSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _firstSenorPin.ValueChanged += FirstSenorPinValueChanged;
+            _1stSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _1stSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _1stSenorPin.ValueChanged += _1StSenorPinValueChanged;
 
-            _thirdSenorPin = gpio.OpenPin(THIRDSENOR_PIN);
+            _2ndSenorPin = gpio.OpenPin(SIG2);
 
-            _thirdSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _thirdSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _thirdSenorPin.ValueChanged += ThirdSenorPinValueChanged;
+            _2ndSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _2ndSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _2ndSenorPin.ValueChanged += _2ndSenorPinValueChanged;
+
+            _3rdSenorPin = gpio.OpenPin(SIG3);
+
+            _3rdSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _3rdSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _3rdSenorPin.ValueChanged += _3RdSenorPinValueChanged;
+
+            _4thSenorPin = gpio.OpenPin(SIG4);
+
+            _4thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _4thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _4thSenorPin.ValueChanged += _4thSenorPinValueChanged;
+
+            _5thSenorPin = gpio.OpenPin(SIG5);
+
+            _5thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _5thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _5thSenorPin.ValueChanged += _5thSenorPinValueChanged;
+        
+            _6thSenorPin = gpio.OpenPin(SIG6);
+
+            _6thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _6thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _6thSenorPin.ValueChanged += _6thSenorPinValueChanged;
+            
+            _7thSenorPin = gpio.OpenPin(SIG7);
+
+            _7thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _7thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _7thSenorPin.ValueChanged += _7thSenorPinValueChanged;
+
+            _8thSenorPin = gpio.OpenPin(SIG8);
+
+            _8thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _8thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _8thSenorPin.ValueChanged += _8thSenorPinValueChanged;
+
+            _9thSenorPin = gpio.OpenPin(SIG9);
+
+            _9thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _9thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _9thSenorPin.ValueChanged += _9thSenorPinValueChanged;
+
+            _10thSenorPin = gpio.OpenPin(SIG10);
+
+            _10thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _10thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _10thSenorPin.ValueChanged += _10thSenorPinValueChanged;
+
+            _11thSenorPin = gpio.OpenPin(SIG11);
+
+            _11thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _11thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _11thSenorPin.ValueChanged += _11thSenorPinValueChanged;
+
+
+            _12thSenorPin = gpio.OpenPin(SIG12);
+
+            _12thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _12thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _12thSenorPin.ValueChanged += _12thSenorPinValueChanged;
+
+
+            _13thSenorPin = gpio.OpenPin(SIG13);
+
+            _13thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _13thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _13thSenorPin.ValueChanged += _13thSenorPinValueChanged;
+
+            _14thSenorPin = gpio.OpenPin(SIG14);
+
+            _14thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
+            _14thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            _14thSenorPin.ValueChanged += _14thSenorPinValueChanged;
+
 
             _ardI2C = await SetUpI2C();
             SetToBlack();
@@ -98,9 +200,145 @@ namespace PiStriker
             _stateMachine.Fire(Modes.Next);
         }
 
-        private void ThirdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        private async void _1StSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
+        {
+            if (e.Edge == GpioPinEdge.FallingEdge)
+            {
+            }
+            else if (e.Edge == GpioPinEdge.RisingEdge)
+            {
+                _results[0] = true;
+                if (_stateMachine.State != Modes.PlayMode)
+                {
+                    _results = new bool[14];
+                    _stateMachine.Fire(Modes.Next);
+                }
+            }
+        }
+
+        private void _2ndSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[1] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _3RdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             _results[2] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _4thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[3] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _5thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[4] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _6thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[5] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _7thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[6] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _8thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[7] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _9thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[8] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _10thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[9] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _11thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[10] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _12thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[12] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _13thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[12] = true;
+
+            if (_stateMachine.State != Modes.PlayMode)
+            {
+                _stateMachine.Fire(Modes.Next);
+            }
+        }
+
+        private void _14thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _results[13] = true;
 
             if (_stateMachine.State != Modes.PlayMode)
             {
@@ -224,7 +462,7 @@ namespace PiStriker
             {
                 if (results[i])
                 {
-                    offset = offset + 7;
+                    offset = offset + 3;
                 }
             }
 
@@ -234,28 +472,13 @@ namespace PiStriker
 
             SendLightingCommand(lightExampleBytes);
             SendLightingCommand(lightExampleBytes2);
-            NextLightAddress = lightAddress;
 
             await Task.Delay(TimeSpan.FromSeconds(5));
             SetToBlack();
             _stateMachine.Fire(Modes.Next);
         }
 
-        private async void FirstSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
-        {
-            if (e.Edge == GpioPinEdge.FallingEdge)
-            {
-            }
-            else if (e.Edge == GpioPinEdge.RisingEdge)
-            {
-                _results[0] = true;
-                if (_stateMachine.State != Modes.PlayMode)
-                {
-                    _results = new bool[14];
-                    _stateMachine.Fire(Modes.Next);
-                }
-            }
-        }
+
 
         public async void slowYellowRise()
         {
