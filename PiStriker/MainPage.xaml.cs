@@ -47,7 +47,7 @@ namespace PiStriker
         public bool _isInUse = false;
         private GpioPinValue _ledPinValue = GpioPinValue.High;
         private bool[] _results = new bool[14];
-        private CancellationTokenSource _source = new CancellationTokenSource();
+        private CancellationTokenSource _partyModeCancellationTokenSource = new CancellationTokenSource();
 
 
         private GpioPin _1stSenorPin;
@@ -87,12 +87,6 @@ namespace PiStriker
             InitGPIO();
             _playTimer.Interval = TimeSpan.FromMilliseconds(2000);
             _playTimer.Tick += GameEnded;
-        }
-
-        private void SetUpPartyMode()
-        {
-            _source = new CancellationTokenSource();
-            PartyMode(_source.Token);
         }
 
         private async void InitGPIO()
@@ -204,8 +198,26 @@ namespace PiStriker
                 _playing = true;
                 await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
+                    StopParty();
                     _playTimer.Start();
                 });
+            }
+        }
+
+        private async Task StartParty()
+        {
+            if (!_playing)
+            {
+                _partyModeCancellationTokenSource = new CancellationTokenSource();
+                PartyMode(_partyModeCancellationTokenSource.Token);
+            }
+        }
+
+        private async Task StopParty()
+        {
+            if (_playing)
+            {
+                _partyModeCancellationTokenSource.Cancel();
             }
         }
 
@@ -293,51 +305,37 @@ namespace PiStriker
             await StartPlay();
         }
 
-        public async void PartyMode(CancellationToken cancellationToken)
+        public async void PartyMode(CancellationToken partyModeCancellationToken)
         {
             try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                while (true)
+                while (_playing != true)
                 {
                     SlowPinkRise();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     QuickOrange();
 
-                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    SlowYellowRise();
 
-                    slowYellowRise();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     QuickPurple();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     SlowLightBlueRise();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     SetToBlack();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(30));
+                    await Task.Delay(TimeSpan.FromSeconds(30), partyModeCancellationToken);
                 }
+
             }
             catch (Exception e)
             {
@@ -397,6 +395,7 @@ namespace PiStriker
         {
             _playTimer.Stop();
             DisplayMode(_results);
+            StartParty();
         }
 
         private async void DisplayMode(bool[] results)
@@ -448,7 +447,7 @@ namespace PiStriker
 
 
 
-        public async void slowYellowRise()
+        public async void SlowYellowRise()
         {
             for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
             {
