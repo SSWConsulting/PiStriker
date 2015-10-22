@@ -15,6 +15,7 @@ namespace PiStriker
     {
         private static DispatcherTimer _playTimer = new DispatcherTimer();
         private static bool _playing = false;
+        private Object thisLock = new Object();
 
         private const int SIG1 = 4;
         private const int SIG2 = 17;
@@ -109,7 +110,7 @@ namespace PiStriker
 
             _1stSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _1stSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _1stSenorPin.ValueChanged += _1StSenorPinValueChanged;
+            _1stSenorPin.ValueChanged += _SenorPinValueChanged;
 
             //_2ndSenorPin = gpio.OpenPin(SIG2);
 
@@ -121,62 +122,62 @@ namespace PiStriker
 
             _3rdSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _3rdSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _3rdSenorPin.ValueChanged += _3RdSenorPinValueChanged;
+            _3rdSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _4thSenorPin = gpio.OpenPin(SIG4);
 
             _4thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _4thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _4thSenorPin.ValueChanged += _4thSenorPinValueChanged;
+            _4thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _5thSenorPin = gpio.OpenPin(SIG5);
 
             _5thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _5thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _5thSenorPin.ValueChanged += _5thSenorPinValueChanged;
+            _5thSenorPin.ValueChanged += _SenorPinValueChanged;
         
             _6thSenorPin = gpio.OpenPin(SIG6);
 
             _6thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _6thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _6thSenorPin.ValueChanged += _6thSenorPinValueChanged;
+            _6thSenorPin.ValueChanged += _SenorPinValueChanged;
             
             _7thSenorPin = gpio.OpenPin(SIG7);
 
             _7thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _7thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _7thSenorPin.ValueChanged += _7thSenorPinValueChanged;
+            _7thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _8thSenorPin = gpio.OpenPin(SIG8);
 
             _8thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _8thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _8thSenorPin.ValueChanged += _8thSenorPinValueChanged;
+            _8thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _9thSenorPin = gpio.OpenPin(SIG9);
 
             _9thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _9thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _9thSenorPin.ValueChanged += _9thSenorPinValueChanged;
+            _9thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _10thSenorPin = gpio.OpenPin(SIG10);
 
             _10thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _10thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _10thSenorPin.ValueChanged += _10thSenorPinValueChanged;
+            _10thSenorPin.ValueChanged += _SenorPinValueChanged;
 
             _11thSenorPin = gpio.OpenPin(SIG11);
 
             _11thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _11thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _11thSenorPin.ValueChanged += _11thSenorPinValueChanged;
+            _11thSenorPin.ValueChanged += _SenorPinValueChanged;
 
 
             _12thSenorPin = gpio.OpenPin(SIG12);
 
             _12thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _12thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _12thSenorPin.ValueChanged += _12thSenorPinValueChanged;
+            _12thSenorPin.ValueChanged += _SenorPinValueChanged;
 
 
             //_13thSenorPin = gpio.OpenPin(SIG13);
@@ -189,7 +190,7 @@ namespace PiStriker
 
             _14thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
             _14thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _14thSenorPin.ValueChanged += _14thSenorPinValueChanged;
+            _14thSenorPin.ValueChanged += _SenorPinValueChanged;
 
 
             _ardI2C = await SetUpI2C();
@@ -197,101 +198,77 @@ namespace PiStriker
             GpioStatus.Text = "GPIO pins initialized correctly.";
         }
 
-        private async Task StartPlay()
+        private void StartPlay()
         {
-            if (!_playing)
-            {
-                _playing = true;
-                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                if (!_playing)
                 {
-                    _playTimer.Start();
-                });
+                    _playing = true;
+                    Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        _playTimer.Start();
+                    });
+                }
+        }
+
+        private void _SenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+                var pinNumber = sender.PinNumber;
+                switch (pinNumber)
+                {
+                    case 22:
+                        _results[0] = true; //Hack to compensate for dead sensor
+                        _results[1] = true;
+                        break;
+
+                    case 24:
+                        _results[2] = true; //Hack to compensate for dead sensor
+                        _results[3] = true; //Hack to compensate for dead sensor
+                        _results[4] = true;
+                        break;
+
+                    case 25:
+                        _results[5] = true;
+                        break;
+
+                    case 16:
+                        _results[6] = true;
+                        break;
+
+                    case 6:
+                        _results[7] = true;
+                        break;
+
+                    case 4:
+                        _results[8] = true; //Hack to compensate for dead sensor
+                        _results[9] = true;
+                        break;
+
+                    case 12:
+                        _results[10] = true;
+                        break;
+
+                    case 18:
+                        _results[11] = true;
+                        break;
+
+                    case 13:
+                        _results[12] = true;
+                        break;
+
+                    case 27:
+                        _results[13] = true;
+                        break;
+
+                    default:
+                        break;
+                }
+
+
+            lock (thisLock)
+            {
+                StartPlay();
             }
-        }
-
-        private async void _1StSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs e)
-        {
-            _results[0] = true;
-            await StartPlay();
-        }
-
-        private async void _2ndSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[1] = true;
-            await StartPlay();
-        }
-
-        private async void _3RdSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[2] = true;
-            await StartPlay();
-        }
-
-        private async void _4thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[3] = true;
-            await StartPlay();
-        }
-
-        private async void _5thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[4] = true;
-            await StartPlay();
-        }
-
-        private async void _6thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[5] = true;
-            await StartPlay();
-        }
-
-        private async void _7thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[6] = true;
-            await StartPlay();
-        }
-
-        private async void _8thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[7] = true;
-            await StartPlay();
-        }
-
-        private async void _9thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[8] = true;
-            await StartPlay();
-        }
-
-        private async void _10thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[9] = true;
-            await StartPlay();
-        }
-
-        private async void _11thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[10] = true;
-            await StartPlay();
-        }
-
-        private async void _12thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[12] = true;
-            await StartPlay();
-        }
-
-        private async void _13thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[12] = true;
-            await StartPlay();
-        }
-
-        private async void _14thSenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            _results[13] = true;
-            await StartPlay();
-        }
+        }       
 
         public async void PartyMode(CancellationToken cancellationToken)
         {
@@ -397,6 +374,7 @@ namespace PiStriker
         {
             _playTimer.Stop();
             DisplayMode(_results);
+            _playing = false;
         }
 
         private async void DisplayMode(bool[] results)
@@ -418,6 +396,11 @@ namespace PiStriker
 
                     results[i] = false;
                 }
+            }
+
+            if (offset == 46)
+            {
+                offset = 50;
             }
 
             var NextLightAddress = Convert.ToByte(lightAddress + offset);
@@ -445,8 +428,6 @@ namespace PiStriker
             await Task.Delay(TimeSpan.FromSeconds(0.5));
             SetToBlack();
         }
-
-
 
         public async void slowYellowRise()
         {
