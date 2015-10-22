@@ -84,80 +84,34 @@ namespace PiStriker
                 return;
             }
 
-            _1stSenorPin = gpio.OpenPin(SIG1);
-            _1stSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _1stSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _1stSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            //_2ndSenorPin = gpio.OpenPin(SIG2);
-            //_2ndSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            //_2ndSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            //_2ndSenorPin.ValueChanged += _2ndSenorPinValueChanged;
-
-            _3rdSenorPin = gpio.OpenPin(SIG3);
-            _3rdSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _3rdSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _3rdSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _4thSenorPin = gpio.OpenPin(SIG4);
-            _4thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _4thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _4thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _5thSenorPin = gpio.OpenPin(SIG5);
-            _5thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _5thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _5thSenorPin.ValueChanged += _SenorPinValueChanged;
-        
-            _6thSenorPin = gpio.OpenPin(SIG6);
-            _6thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _6thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _6thSenorPin.ValueChanged += _SenorPinValueChanged;
-            
-            _7thSenorPin = gpio.OpenPin(SIG7);
-            _7thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _7thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _7thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _8thSenorPin = gpio.OpenPin(SIG8);
-            _8thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _8thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _8thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _9thSenorPin = gpio.OpenPin(SIG9);
-            _9thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _9thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _9thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _10thSenorPin = gpio.OpenPin(SIG10);
-            _10thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _10thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _10thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _11thSenorPin = gpio.OpenPin(SIG11);
-            _11thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _11thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _11thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-            _12thSenorPin = gpio.OpenPin(SIG12);
-            _12thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _12thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _12thSenorPin.ValueChanged += _SenorPinValueChanged;
-
-
-            //_13thSenorPin = gpio.OpenPin(SIG13);
-            //_13thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            //_13thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            //_13thSenorPin.ValueChanged += _13thSenorPinValueChanged;
-
-            _14thSenorPin = gpio.OpenPin(SIG14);
-            _14thSenorPin.SetDriveMode(GpioPinDriveMode.Input);
-            _14thSenorPin.DebounceTimeout = TimeSpan.FromTicks(10);
-            _14thSenorPin.ValueChanged += _SenorPinValueChanged;
+            _1stSenorPin = SetUpPin(gpio, SIG1);
+            //_2ndSenorPin = SetUpPin(gpio, SIG2);
+            _3rdSenorPin = SetUpPin(gpio, SIG3);
+            _4thSenorPin = SetUpPin(gpio, SIG4);
+            _5thSenorPin = SetUpPin(gpio, SIG5);
+            _6thSenorPin = SetUpPin(gpio, SIG6);
+            _7thSenorPin = SetUpPin(gpio, SIG7);
+            _8thSenorPin = SetUpPin(gpio, SIG8);
+            _9thSenorPin = SetUpPin(gpio, SIG9);
+            _10thSenorPin = SetUpPin(gpio, SIG10);
+            _11thSenorPin = SetUpPin(gpio, SIG11);
+            _12thSenorPin = SetUpPin(gpio, SIG12);            
+            //_13thSenorPin = SetUpPin(gpio, SIG13);
+            _14thSenorPin = SetUpPin(gpio, SIG14);
 
             _ardI2C = await SetUpI2C();
             SetToBlack();
             GpioStatus.Text = "GPIO pins initialized correctly.";
+        }
+
+        private GpioPin SetUpPin(GpioController gpio, int pinNumber)
+        { 
+            var senorPin = gpio.OpenPin(pinNumber);
+            senorPin.SetDriveMode(GpioPinDriveMode.Input);
+            senorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            senorPin.ValueChanged += _SenorPinValueChanged;
+
+            return senorPin;
         }
 
         private void StartPlay()
