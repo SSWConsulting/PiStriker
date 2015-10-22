@@ -10,11 +10,11 @@
         <Grid.Background>
             <ImageBrush Stretch="Fill" ImageSource="Assets/GreyBackGround.png"/>
         </Grid.Background>
-        <Image x:Name="image"  HorizontalAlignment="Left" Height="300" Margin="1100,750,0,0" VerticalAlignment="Top" Width="602" Source="Assets/sswLogo.png" Visibility="Collapsed"/>
-        <TextBlock x:Name="TitleString" HorizontalAlignment="Center" Margin="10,289,10,0" TextAlignment="Center" TextWrapping="Wrap" Text="Your Strength Index" VerticalAlignment="Top" Height="240" Width="1900" FontSize="100" Foreground="#FFCC4141"/>
-        <TextBlock x:Name="StrengthIndex" HorizontalAlignment="Center" Margin="879,494,879,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" FontSize="300" Foreground="#FFCC4141"/>
+        <Image x:Name="image"  HorizontalAlignment="Left" Height="320" Margin="1100,750,0,0" VerticalAlignment="Top" Width="602" Source="Assets/sswLogo.png" Visibility="Collapsed"/>
+        <TextBlock x:Name="TitleString" HorizontalAlignment="Center" Margin="10,300,10,0" TextAlignment="Center" TextWrapping="Wrap" Text="Your Strength Index" VerticalAlignment="Top" Height="240" Width="1900" FontSize="100" Foreground="#FFCC4141"/>
+        <TextBlock x:Name="StrengthIndex" HorizontalAlignment="Center" Margin="20,450,20,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" FontSize="300" Foreground="#FFCC4141"/>
         <TextBlock x:Name="GpioStatus" HorizontalAlignment="Left" Margin="10,1043,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" FontSize="20" Foreground="#FFCC4141"/>
-        <TextBlock x:Name="PiStriker" HorizontalAlignment="Center" Margin="10,5,10,0" TextAlignment="Center" TextWrapping="Wrap" Text="Ruby's PiStriker" VerticalAlignment="Top" Height="240" Width="1900" FontSize="200" Foreground="#FFCC4141" FontWeight="Bold"/>
+        <TextBlock x:Name="PiStriker" HorizontalAlignment="Center" Margin="-770,5,-770,0" TextAlignment="Center" TextWrapping="Wrap" Text="Ruby's PiStriker" VerticalAlignment="Top" Height="290" Width="1900" FontSize="200" Foreground="#FFCC4141" FontWeight="Bold"/>
 
 
     </Grid>
