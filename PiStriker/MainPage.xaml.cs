@@ -48,7 +48,7 @@ namespace PiStriker
         public bool _isInUse = false;
         private GpioPinValue _ledPinValue = GpioPinValue.High;
         private bool[] _results = new bool[14];
-        private CancellationTokenSource _source = new CancellationTokenSource();
+        private CancellationTokenSource _partyModeCancellationTokenSource = new CancellationTokenSource();
 
 
         private GpioPin _1stSenorPin;
@@ -88,12 +88,6 @@ namespace PiStriker
             InitGPIO();
             _playTimer.Interval = TimeSpan.FromMilliseconds(2000);
             _playTimer.Tick += GameEnded;
-        }
-
-        private void SetUpPartyMode()
-        {
-            _source = new CancellationTokenSource();
-            PartyMode(_source.Token);
         }
 
         private async void InitGPIO()
@@ -200,51 +194,69 @@ namespace PiStriker
 
         private void StartPlay()
         {
-                if (!_playing)
-                {
-                    _playing = true;
+            if (!_playing)
+            {
+                _playing = true;
                     Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        _playTimer.Start();
-                    });
-                }
+                {
+                    StopParty();
+                    _playTimer.Start();
+                });
+            }
         }
 
+        private void StartParty()
+        {
+            if (!_playing)
+            {
+                _partyModeCancellationTokenSource = new CancellationTokenSource();
+                PartyMode(_partyModeCancellationTokenSource.Token);
+            }
+        }
+
+        private void StopParty()
+        {
+            if (_playing)
+            {
+                _partyModeCancellationTokenSource.Cancel();
+            }
+        }
+                
         private void _SenorPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
                 var pinNumber = sender.PinNumber;
                 switch (pinNumber)
-                {
+        {
                     case 22:
                         _results[0] = true; //Hack to compensate for dead sensor
-                        _results[1] = true;
+            _results[1] = true;
                         break;
 
                     case 24:
                         _results[2] = true; //Hack to compensate for dead sensor
                         _results[3] = true; //Hack to compensate for dead sensor
-                        _results[4] = true;
+            _results[4] = true;
                         break;
 
                     case 25:
-                        _results[5] = true;
+            _results[5] = true;
                         break;
 
                     case 16:
-                        _results[6] = true;
+            _results[6] = true;
                         break;
 
                     case 6:
-                        _results[7] = true;
+            _results[7] = true;
                         break;
 
                     case 4:
                         _results[8] = true; //Hack to compensate for dead sensor
-                        _results[9] = true;
+            _results[9] = true;
                         break;
 
                     case 12:
-                        _results[10] = true;
+            _results[10] = true;
                         break;
 
                     case 18:
@@ -252,7 +264,7 @@ namespace PiStriker
                         break;
 
                     case 13:
-                        _results[12] = true;
+            _results[12] = true;
                         break;
 
                     case 27:
@@ -261,60 +273,46 @@ namespace PiStriker
 
                     default:
                         break;
-                }
+        }
 
 
             lock (thisLock)
-            {
+        {
                 StartPlay();
-            }
-        }       
+        }
+        }
 
-        public async void PartyMode(CancellationToken cancellationToken)
+        public async void PartyMode(CancellationToken partyModeCancellationToken)
         {
             try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                while (true)
+                while (_playing != true)
                 {
                     SlowPinkRise();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     QuickOrange();
 
-                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    SlowYellowRise();
 
-                    slowYellowRise();
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     QuickPurple();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     SlowLightBlueRise();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-
+                    await Task.Delay(TimeSpan.FromSeconds(1), partyModeCancellationToken);
 
                     SetToBlack();
 
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    await Task.Delay(TimeSpan.FromSeconds(30));
+                    await Task.Delay(TimeSpan.FromSeconds(30), partyModeCancellationToken);
                 }
+
             }
             catch (Exception e)
             {
@@ -374,6 +372,7 @@ namespace PiStriker
         {
             _playTimer.Stop();
             DisplayMode(_results);
+            StartParty();
             _playing = false;
         }
 
@@ -429,7 +428,9 @@ namespace PiStriker
             SetToBlack();
         }
 
-        public async void slowYellowRise()
+
+
+        public async void SlowYellowRise()
         {
             for (byte lightAddress = 0x00; lightAddress <= 0x32; lightAddress++)
             {
