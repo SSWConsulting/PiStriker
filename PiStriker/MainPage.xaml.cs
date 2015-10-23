@@ -115,7 +115,7 @@ namespace PiStriker
         { 
             var senorPin = gpio.OpenPin(pinNumber);
             senorPin.SetDriveMode(GpioPinDriveMode.Input);
-            senorPin.DebounceTimeout = TimeSpan.FromTicks(10);
+            senorPin.DebounceTimeout = TimeSpan.FromTicks(15);
             senorPin.ValueChanged += _SenorPinValueChanged;
 
             return senorPin;
