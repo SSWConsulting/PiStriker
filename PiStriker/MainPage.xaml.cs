@@ -64,6 +64,9 @@ namespace PiStriker
         private GpioPin _13thSenorPin;
         private GpioPin _14thSenorPin;
 
+        private int[] _Last5Records = new int[5] { 0, 0, 0, 0, 0 };
+        private int _TopScore = 0;
+
         public MainPage()
         {
             InitializeComponent();
@@ -102,6 +105,10 @@ namespace PiStriker
             _ardI2C = await SetUpI2C();
             SetToBlack();
             GpioStatus.Text = "GPIO pins initialized correctly.";
+            
+            // Use default values
+            UpdateLastFiveRecords(0);
+            UpdateTopScore(0);
         }
 
         private GpioPin SetUpPin(GpioController gpio, int pinNumber)
@@ -314,7 +321,7 @@ namespace PiStriker
                 offset = 50;                
             }
 
-            StrengthIndex.Text = offset.ToString();
+            StrengthIndex.Text = offset.ToString();            
 
             var NextLightAddress = Convert.ToByte(lightAddress + offset);
             byte[] lightExampleBytes = {0, 255, 0, lightAddress, NextLightAddress, 0x1};
@@ -336,15 +343,47 @@ namespace PiStriker
             await Task.Delay(TimeSpan.FromSeconds(0.5));
             SetToBlack();
             await Task.Delay(TimeSpan.FromSeconds(0.5));
-            SendLightingCommand(lightExampleBytes);
-            SendLightingCommand(lightExampleBytes2);
-            await Task.Delay(TimeSpan.FromSeconds(0.5));
-            SetToBlack();
-            await Task.Delay(TimeSpan.FromSeconds(0.5));
 
             _playing = false;
-            StrengthIndex.Text = "0";
+            StrengthIndex.Text = "Ready";
+            UpdateLastFiveRecords(offset);
+            UpdateTopScore(offset);
             StartParty();
+        }
+
+        private void UpdateTopScore(int offset)
+        {
+            if (_TopScore < offset)
+            {
+                _TopScore = offset;
+            }
+
+            TopScore.Text = "High Score: " + Environment.NewLine;
+            TopScore.Text += _TopScore.ToString();            
+        }
+
+        private void UpdateLastFiveRecords(int offset)
+        {
+            // update last five records
+            for (int i=0;i<_Last5Records.Length;i++)
+            {
+                if (i < 4)
+                {
+                    _Last5Records[i] = _Last5Records[i + 1];
+                }
+                else if(i==4)
+                {
+                    _Last5Records[i] = offset;
+                }
+            }
+
+            // update ui with last five records
+            LastFiveRecords.Text = "Last 5: " + Environment.NewLine;
+            for(int i=4;i >=0; i--)
+            {
+                var r = _Last5Records[i];
+                LastFiveRecords.Text += r.ToString() + " ";              
+            }
         }
 
         public async Task SlowYellowRise()
