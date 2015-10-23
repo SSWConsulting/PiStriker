@@ -72,7 +72,7 @@ namespace PiStriker
             InitializeComponent();
 
             InitGPIO();
-            _playTimer.Interval = TimeSpan.FromMilliseconds(2000);
+            _playTimer.Interval = TimeSpan.FromMilliseconds(2500);
             _playTimer.Tick += GameEnded;
             StartParty();
         }
@@ -115,7 +115,7 @@ namespace PiStriker
         { 
             var senorPin = gpio.OpenPin(pinNumber);
             senorPin.SetDriveMode(GpioPinDriveMode.Input);
-            senorPin.DebounceTimeout = TimeSpan.FromTicks(15);
+            senorPin.DebounceTimeout = TimeSpan.FromTicks(2);
             senorPin.ValueChanged += _SenorPinValueChanged;
 
             return senorPin;
