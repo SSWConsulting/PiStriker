@@ -321,6 +321,7 @@ namespace PiStriker
                 offset = 50;                
             }
 
+            TitleString.Visibility = Visibility.Visible;
             StrengthIndex.Text = offset.ToString();            
 
             var NextLightAddress = Convert.ToByte(lightAddress + offset);
@@ -345,11 +346,13 @@ namespace PiStriker
             await Task.Delay(TimeSpan.FromSeconds(0.5));
 
             _playing = false;
+            TitleString.Visibility = Visibility.Collapsed;
             StrengthIndex.Text = "Ready";
             UpdateLastFiveRecords(offset);
             UpdateTopScore(offset);
             StartParty();
         }
+              
 
         private void UpdateTopScore(int offset)
         {
